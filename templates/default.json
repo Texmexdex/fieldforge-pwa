@@ -1,0 +1,52 @@
+{
+  "name": "Default Invoice Template",
+  "description": "Standard invoice layout for field service businesses",
+  "version": "1.0",
+  "fields": {
+    "company": {
+      "showLogo": true,
+      "showName": true,
+      "showTagline": true,
+      "showContact": true
+    },
+    "document": {
+      "showNumber": true,
+      "showDate": true,
+      "showType": true
+    },
+    "client": {
+      "showName": true,
+      "showAddress": true,
+      "showCityStateZip": true,
+      "showPhone": true,
+      "showEmail": true
+    },
+    "jobNotes": {
+      "enabled": true,
+      "label": "Job Notes"
+    },
+    "lineItems": {
+      "showDescription": true,
+      "showQuantity": true,
+      "showRate": true,
+      "showTotal": true
+    },
+    "totals": {
+      "showSubtotal": true,
+      "showTax": true,
+      "showGrandTotal": true,
+      "taxLabel": "Tax"
+    },
+    "footer": {
+      "enabled": true,
+      "defaultText": "Payment due upon completion. Thank you for your business!"
+    }
+  },
+  "styling": {
+    "primaryColor": "#1a1a1a",
+    "accentColor": "#2563eb",
+    "fontFamily": "Inter, -apple-system, sans-serif",
+    "logoSize": 90,
+    "spacing": "comfortable"
+  }
+}
