@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a1a">
+  <meta name="description" content="FieldForge - Quote & Invoice PWA for Field Service Trades">
+  <title>FieldForge</title>
+  
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Install Banner -->
+  <div id="install-banner" class="install-banner">
+    <span>Install FieldForge for offline access</span>
+    <button onclick="installPWA()">Install</button>
+  </div>
+
+  <!-- APP HEADER -->
+  <header class="app-header">
+    <div class="app-logo">
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="36" height="36" rx="8" fill="#1a1a1a"/>
+        <path d="M10 26L18 10L26 26" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M13 20H23" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="18" cy="28" r="2" fill="white"/>
+      </svg>
+      <div>
+        <h1>FieldForge</h1>
+        <span>Quote & Invoice PWA</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-sm" onclick="newDocument()">New</button>
+      <button class="btn btn-sm" onclick="saveDocument()">Save</button>
+      <button class="btn btn-sm" onclick="exportData()">Export</button>
+      <button class="btn btn-sm" onclick="document.getElementById('file-import').click()">Import</button>
+      <input type="file" id="file-import" accept=".json" style="display:none" onchange="handleFileImport(this.files[0])">
+    </div>
+  </header>
+
+  <!-- CONTROLS BAR -->
+  <div class="controls">
+    <select id="trade-select" class="trade-select" onchange="updateTrade(this.value)">
+      <!-- Populated by JS -->
+    </select>
+    
+    <div class="doc-toggle active" id="doc-type" onclick="toggleType()">INVOICE</div>
+    
+    <button class="btn" onclick="openModal('rate-modal')">📊 Rates</button>
+    <button class="btn" onclick="openModal('biz-modal')">🏢 Business</button>
+    <button class="btn btn-primary" onclick="printPDF()">🖨️ PDF</button>
+  </div>
+
+  <!-- MAIN SHEET -->
+  <div id="sheet" class="sheet">
+
+    <!-- COMPANY HEADER -->
+    <header class="company-header">
+      <div class="logo-upload" onclick="document.getElementById('logo-input').click()">
+        <input type="file" id="logo-input" accept="image/*" onchange="handleLogoUpload(this.files[0])" style="display:none">
+        <span class="placeholder">Logo<br><small>Click to upload</small></span>
+      </div>
+      <div class="biz-info">
+        <input type="text" id="biz-name" class="biz-name-input" placeholder="Business Name" oninput="updateBusinessInfo()">
+        <input type="text" id="biz-tagline" class="tagline-input" placeholder="Tagline / Services" oninput="updateBusinessInfo()">
+        <div class="contact-inputs">
+          <input type="text" id="biz-phone" placeholder="Phone" oninput="updateBusinessInfo()">
+          <input type="text" id="biz-email" placeholder="Email" oninput="updateBusinessInfo()">
+        </div>
+      </div>
+    </header>
+
+    <!-- META ROW -->
+    <div class="meta-row">
+      <div id="doc-label" class="doc-label active" onclick="toggleType()">INVOICE</div>
+      <div class="date-group">
+        <div class="field-group">
+          <label>Invoice #</label>
+          <input type="text" id="invoice-num" placeholder="INV-0001">
+        </div>
+        <div class="field-group">
+          <label>Date</label>
+          <input type="date" id="date-picker">
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENT + NOTES GRID -->
+    <div class="client-grid">
+      <div class="input-stack">
+        <div class="section-title">Bill To</div>
+        <input type="text" id="client-name" class="client-name" placeholder="Client Name" oninput="updateField('client-name', this.value)">
+        <input type="text" id="client-address" placeholder="Street Address" oninput="updateField('client-address', this.value)">
+        <input type="text" id="client-csz" placeholder="City, State, ZIP" oninput="updateField('client-csz', this.value)">
+        <input type="text" id="client-phone" placeholder="Phone" oninput="updateField('client-phone', this.value)">
+        <input type="text" id="client-email" placeholder="Email" oninput="updateField('client-email', this.value)">
+      </div>
+      <div class="input-stack">
+        <div class="section-title">Job Notes</div>
+        <textarea id="job-notes" rows="4" placeholder="Access notes, special instructions, job details..." oninput="updateField('jobNotes', this.value)"></textarea>
+      </div>
+    </div>
+
+    <!-- ZIP SECTION -->
+    <div class="zip-section">
+      <div class="zip-row">
+        <label>ZIP for tax lookup:</label>
+        <input type="text" id="zip-input" placeholder="77062" maxlength="5" onkeyup="if(this.value.length===5)lookupZip()">
+        <button class="btn btn-sm" onclick="lookupZip()">Lookup Tax</button>
+        <span class="tax-display" id="zip-result"></span>
+      </div>
+    </div>
+
+    <!-- LINE ITEMS TABLE -->
+    <table>
+      <thead>
+        <tr>
+          <th class="c-desc">Description</th>
+          <th class="c-qty">Qty</th>
+          <th class="c-rate">Rate</th>
+          <th class="c-total">Total</th>
+          <th class="c-del"></th>
+        </tr>
+      </thead>
+      <tbody id="lines">
+        <!-- Populated by JS -->
+      </tbody>
+    </table>
+
+    <button class="btn-add" onclick="addRow()">+ Add Line Item</button>
+
+    <!-- TOTALS -->
+    <div class="totals-section">
+      <div class="totals-box">
+        <div class="t-row">
+          <span>Subtotal</span>
+          <span id="subtotal">$0.00</span>
+        </div>
+        <div class="t-row tax-row">
+          <span>
+            Tax
+            <input type="number" id="tax-rate" value="0" min="0" max="100" step="0.01" oninput="calc()">
+            %
+          </span>
+          <span id="tax-amt">$0.00</span>
+        </div>
+        <div class="t-row grand">
+          <span>TOTAL</span>
+          <span id="grand">$0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+      <input type="text" id="footer-input" placeholder="Payment terms, thank you message, or footer text..." oninput="updateField('footer', this.value)">
+    </footer>
+
+  </div>
+  <!-- END SHEET -->
+
+</div>
+<!-- END CONTAINER -->
+
+<!-- RATE REFERENCE MODAL -->
+<div id="rate-modal" class="modal-overlay" onclick="if(event.target===this)closeModal('rate-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📊 Rate Reference (<span id="modal-trade-name">General</span>)</h2>
+      <button class="modal-close" onclick="closeModal('rate-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="rate-modal-content">
+      <p class="modal-subtitle">Estimates based on regional market averages. Adjust for complexity/access.</p>
+      <div id="rate-table-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BUSINESS INFO MODAL -->
+<div id="biz-modal" class="modal-overlay" onclick="if(event.target===this)closeModal('biz-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>🏢 Business Information</h2>
+      <button class="modal-close" onclick="closeModal('biz-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="biz-editor">
+        <details open>
+          <summary>Business Details</summary>
+          <div class="biz-editor-grid">
+            <input type="text" id="biz-name-modal" placeholder="Business Name" oninput="updateBusinessInfo()">
+            <input type="text" id="biz-tagline-modal" placeholder="Tagline" oninput="updateBusinessInfo()">
+            <input type="text" id="biz-phone-modal" placeholder="Phone" oninput="updateBusinessInfo()">
+            <input type="text" id="biz-email-modal" placeholder="Email" oninput="updateBusinessInfo()">
+            <input type="text" id="biz-website-modal" placeholder="Website" oninput="updateBusinessInfo()">
+          </div>
+        </details>
+        <details>
+          <summary>Settings</summary>
+          <div class="biz-editor-grid">
+            <div>
+              <label style="font-size:11px;color:#666;display:block;margin-bottom:4px;">Invoice Prefix</label>
+              <input type="text" id="inv-prefix" value="INV" onchange="updateSettings({invoicePrefix:this.value})">
+            </div>
+            <div>
+              <label style="font-size:11px;color:#666;display:block;margin-bottom:4px;">Default Tax Rate %</label>
+              <input type="number" id="default-tax" value="0" onchange="updateSettings({taxRate:parseFloat(this.value)})">
+            </div>
+          </div>
+        </details>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn" onclick="closeModal('biz-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="updateBusinessInfo();closeModal('biz-modal')">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/pricing.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/services.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
